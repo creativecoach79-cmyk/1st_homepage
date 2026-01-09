@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스트림스 숫자 뽑기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 30px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #667eea);
+            border-radius: 27px;
+            z-index: -1;
+            animation: borderGlow 3s linear infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .title {
+            font-size: 4rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, #f8f9ff, #e8f0fe);
+            border-radius: 15px;
+            padding: 15px 25px;
+            text-align: center;
+            border: 2px solid #dee2e6;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .main-area {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+            min-height: 500px;
+        }
+
+        .left-panel, .right-panel {
+            background: linear-gradient(135deg, #f8f9ff, #ffffff);
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .center-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .number-display {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #ffffff, #f8f9ff);
+            border: 6px solid #e9ecef;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 40px;
+            box-shadow: 
+                inset 0 4px 20px rgba(0,0,0,0.1),
+                0 10px 30px rgba(0,0,0,0.1);
+            position: relative;
+            transition: all 0.5s ease;
+        }
+
+        .number-display::before {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #667eea, #764ba2, #667eea);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: -1;
+        }
+
+        .number-display.has-number {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #5a6fd8;
+            animation: numberReveal 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 
+                0 15px 40px rgba(102, 126, 234, 0.4),
+                inset 0 4px 20px rgba(255,255,255,0.2);
+        }
+
+        .number-display.has-number::before {
+            opacity: 1;
+            animation: rotate 3s linear infinite;
+        }
+
+        .number-display.drawing {
+            animation: drawingSpin 1.2s ease-in-out;
+        }
+
+        @keyframes numberReveal {
+            0% { 
+                transform: scale(0.5) rotateY(180deg); 
+                opacity: 0; 
+            }
+            50% { 
+                transform: scale(1.2) rotateY(90deg); 
+            }
+            100% { 
+                transform: scale(1) rotateY(0deg); 
+                opacity: 1; 
+            }
+        }
+
+        @keyframes drawingSpin {
+            0% { transform: rotateY(0deg) scale(1); }
+            25% { transform: rotateY(90deg) scale(0.8); }
+            50% { transform: rotateY(180deg) scale(1.1); }
+            75% { transform: rotateY(270deg) scale(0.9); }
+            100% { transform: rotateY(360deg) scale(1); }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .draw-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 2.2rem;
+            font-weight: bold;
+            padding: 25px 80px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .draw-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .draw-btn:hover:not(:disabled)::before {
+            left: 100%;
+        }
+
+        .draw-btn:hover:not(:disabled) {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .draw-btn:active:not(:disabled) {
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .draw-btn:disabled {
+            background: linear-gradient(135deg, #adb5bd, #6c757d);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 4px 15px rgba(173, 181, 189, 0.3);
+        }
+
+        .panel-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 25px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .control-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            background: white;
+            color: #667eea;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 18px 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: #667eea;
+            transition: width 0.3s ease;
+            z-index: -1;
+        }
+
+        .control-btn:hover::before {
+            width: 100%;
+        }
+
+        .control-btn:hover {
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .progress-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px solid #e9ecef;
+        }
+
+        .progress-title {
+            font-size: 1.3rem;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .progress-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: inset 0 3px 8px rgba(0,0,0,0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 15px;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: progressShine 2s infinite;
+        }
+
+        @keyframes progressShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 1.2rem;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .remaining-numbers {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+        }
+
+        .remaining-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .number-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .number-grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .number-grid::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        .number-chip {
+            background: linear-gradient(135deg, #e8f0fe, #f0f4ff);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #667eea;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .number-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .number-chip.used {
+            background: linear-gradient(135deg, #f5f5f5, #e9ecef);
+            color: #adb5bd;
+            border-color: #dee2e6;
+        }
+
+        .number-chip.used:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .number-chip.current {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border-color: #ffc107;
+            color: #856404;
+            animation: currentHighlight 2s infinite;
+            transform: scale(1.1);
+        }
+
+        @keyframes currentHighlight {
+            0%, 100% { 
+                box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4);
+                transform: scale(1.1);
+            }
+            50% { 
+                box-shadow: 0 0 0 15px rgba(255, 193, 7, 0);
+                transform: scale(1.15);
+            }
+        }
+
+        .game-info {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 2px solid #ffc107;
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .game-info h3 {
+            color: #856404;
+            margin-bottom: 20px;
+            font-size: 1.6rem;
+            text-align: center;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            text-align: center;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 4px solid #856404;
+        }
+
+        .info-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .info-label {
+            color: #6c5700;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        .history-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+            margin-top: 25px;
+        }
+
+        .history-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px 18px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1rem;
+        }
+
+        .history-order {
+            color: #6c757d;
+            font-weight: 600;
+        }
+
+        .history-number {
+            color: #495057;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 1200px) {
+            .main-area {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .title {
+                font-size: 3rem;
+            }
+            
+            .number-display {
+                width: 250px;
+                height: 250px;
+                font-size: 6rem;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-stats {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .number-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">🎲 스트림스 숫자 뽑기</h1>
+            <p class="subtitle">스트림스 게임을 위한 전용 숫자 추첨 시스템</p>
+            
+            <div class="game-stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalNumbers">39</div>
+                    <div class="stat-label">전체 숫자</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="drawnCount">0</div>
+                    <div class="stat-label">뽑힌 숫자</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="remainingCount">39</div>
+                    <div class="stat-label">남은 숫자</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-area">
+            <!-- 왼쪽 패널: 컨트롤 -->
+            <div class="left-panel">
+                <div class="panel-title">🎮 게임 컨트롤</div>
+                
+                <div class="control-buttons">
+                    <button class="control-btn" onclick="resetGame()">🔄 새로 시작</button>
+                    <button class="control-btn" onclick="showHistory()">📋 뽑힌 순서</button>
+                    <button class="control-btn" onclick="showStats()">📊 통계 보기</button>
+                </div>
+
+                <div class="progress-section">
+                    <div class="progress-title">🎯 진행 상황</div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="progress-text" id="progressText">0 / 39 완료</div>
+                </div>
+
+                <div class="history-section">
+                    <div class="history-title">📋 최근 뽑힌 숫자</div>
+                    <div class="history-list" id="recentHistory">
+                        <p style="color: #999; text-align: center; padding: 20px;">아직 뽑힌 숫자가 없습니다</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 중앙: 숫자 표시 및 뽑기 -->
+            <div class="center-section">
+                <div class="number-display" id="numberDisplay">?</div>
+                <button class="draw-btn" id="drawBtn" onclick="drawNumber()">
+                    🎯 숫자 뽑기
+                </button>
+            </div>
+
+            <!-- 오른쪽 패널: 숫자 현황 -->
+            <div class="right-panel">
+                <div class="panel-title">📊 숫자 현황</div>
+                
+                <div class="remaining-numbers">
+                    <div class="remaining-title">🎲 전체 숫자 풀</div>
+                    <div class="number-grid" id="numberGrid">
+                        <!-- 숫자 칩들이 표시됩니다 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-info">
+            <h3>📚 스트림스 숫자 구성</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-number">1-10</div>
+                    <div class="info-label">각 1개씩<br>총 10개</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-number">11-19</div>
+                    <div class="info-label">각 2개씩<br>총 18개</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-number">20-30</div>
+                    <div class="info-label">각 1개씩<br>총 11개</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let remainingNumbers = [];
+        let drawnNumbers = [];
+        let currentNumber = null;
+        let totalDrawn = 0;
+
+        // 게임 초기화
+        function initGame() {
+            remainingNumbers = [];
+            drawnNumbers = [];
+            currentNumber = null;
+            totalDrawn = 0;
+            
+            // 숫자 풀 생성
+            for (let i = 1; i <= 10; i++) {
+                remainingNumbers.push(i);
+            }
+            
+            for (let i = 11; i <= 19; i++) {
+                remainingNumbers.push(i, i);
+            }
+            
+            for (let i = 20; i <= 30; i++) {
+                remainingNumbers.push(i);
+            }
+
+            shuffleArray(remainingNumbers);
+            
+            // UI 초기화
+            document.getElementById('numberDisplay').textContent = '?';
+            document.getElementById('numberDisplay').className = 'number-display';
+            document.getElementById('drawBtn').disabled = false;
+            document.getElementById('drawBtn').textContent = '🎯 숫자 뽑기';
+            
+            renderNumberGrid();
+            updateProgress();
+            updateStats();
+            updateRecentHistory();
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function drawNumber() {
+            if (remainingNumbers.length === 0) {
+                alert('🎉 모든 숫자를 다 뽑았습니다!');
+                return;
+            }
+
+            const display = document.getElementById('numberDisplay');
+            display.classList.add('drawing');
+            
+            setTimeout(() => {
+                currentNumber = remainingNumbers.pop();
+                drawnNumbers.push({
+                    number: currentNumber,
+                    order: totalDrawn + 1,
+                    time: new Date().toLocaleTimeString()
+                });
+                totalDrawn++;
+                
+                display.textContent = currentNumber;
+                display.classList.remove('drawing');
+                display.classList.add('has-number');
+                
+                renderNumberGrid();
+                updateProgress();
+                updateStats();
+                updateRecentHistory();
+                
+                if (remainingNumbers.length === 0) {
+                    document.getElementById('drawBtn').disabled = true;
+                    document.getElementById('drawBtn').textContent = '🎉 완료!';
+                    
+                    setTimeout(() => {
+                        alert('🎉 축하합니다! 모든 숫자를 다 뽑았습니다!\n이제 스트림스 게임을 시작할 수 있습니다.');
+                    }, 500);
+                }
+            }, 600);
+        }
+
+        function renderNumberGrid() {
+            const container = document.getElementById('numberGrid');
+            container.innerHTML = '';
+            
+            const allNumbers = [];
+            
+            for (let i = 1; i <= 10; i++) {
+                allNumbers.push({num: i, total: 1, used: 0});
+            }
+            
+            for (let i = 11; i <= 19; i++) {
+                allNumbers.push({num: i, total: 2, used: 0});
+            }
+            
+            for (let i = 20; i <= 30; i++) {
+                allNumbers.push({num: i, total: 1, used: 0});
+            }
+            
+            drawnNumbers.forEach(item => {
+                const numItem = allNumbers.find(n => n.num === item.number);
+                if (numItem) numItem.used++;
+            });
+            
+            allNumbers.forEach(item => {
+                for (let i = 0; i < item.total; i++) {
+                    const chip = document.createElement('div');
+                    chip.className = 'number-chip';
+                    chip.textContent = item.num;
+                    
+                    if (i < item.used) {
+                        chip.classList.add('used');
+                        if (currentNumber === item.num && i === item.used - 1) {
+                            chip.classList.add('current');
+                        }
+                    }
+                    
+                    container.appendChild(chip);
+                }
+            });
+        }
+
+        function updateProgress() {
+            const progress = (totalDrawn / 39) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = `${totalDrawn} / 39 완료`;
+        }
+
+        function updateStats() {
+            document.getElementById('drawnCount').textContent = totalDrawn;
+            document.getElementById('remainingCount').textContent = 39 - totalDrawn;
+        }
+
+        function updateRecentHistory() {
+            const container = document.getElementById('recentHistory');
+            
+            if (drawnNumbers.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">아직 뽑힌 숫자가 없습니다</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            const recent = drawnNumbers.slice(-5).reverse();
+            
+            recent.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                const order = document.createElement('div');
+                order.className = 'history-order';
+                order.textContent = `${item.order}번째`;
+                
+                const number = document.createElement('div');
+                number.className = 'history-number';
+                number.textContent = item.number;
+                
+                historyItem.appendChild(order);
+                historyItem.appendChild(number);
+                container.appendChild(historyItem);
+            });
+        }
+
+        function showHistory() {
+            if (drawnNumbers.length === 0) {
+                alert('아직 뽑힌 숫자가 없습니다.');
+                return;
+            }
+            
+            const history = drawnNumbers.map(item => 
+                `${item.order}. ${item.number} (${item.time})`
+            ).join('\n');
+            
+            alert(`🎲 뽑힌 숫자 전체 기록:\n\n${history}`);
+        }
+
+        function showStats() {
+            if (drawnNumbers.length === 0) {
+                alert('아직 뽑힌 숫자가 없습니다.');
+                return;
+            }
+
+            const stats = {};
+            drawnNumbers.forEach(item => {
+                stats[item.number] = (stats[item.number] || 0) + 1;
+            });
+
+            const sortedStats = Object.entries(stats)
+                .sort(([,a], [,b]) => b - a)
+                .map(([num, count]) => `${num}: ${count}번`)
+                .join('\n');
+
+            alert(`📊 숫자별 뽑힌 횟수:\n\n${sortedStats}`);
+        }
+
+        function resetGame() {
+            if (totalDrawn > 0 && !confirm('정말로 새로 시작하시겠습니까?\n지금까지의 기록이 모두 초기화됩니다.')) {
+                return;
+            }
+            initGame();
+        }
+
+        // 게임 시작
+        initGame();
+    </script>
+</body>
+</html>
